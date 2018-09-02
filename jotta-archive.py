@@ -21,15 +21,17 @@ def visit(basedir, folder, remote=None, filter=no_filter, dry_run=False):
         if item.is_dir():
             visit(basedir, item, remote, filter, dry_run)
         else:
+            src = relative(basedir, item)
+            dest = remote / src.parent
+
             if dry_run:
-                print("File: %s" % relative(basedir, item))
+                print("File: %s -> %s" % (src, dest))
             else:
-                src = relative(basedir, item)
-                cmd = ["echo", "archive", '%s' % str(src)]
+                cmd = ["echo", "archive", '--nogui', '%s' % str(src)]
 
                 if remote is not None:
-                    dest = remote / src.parent
-                    cmd.append('--remote %s' % dest)
+                    cmd.append('--remote')
+                    cmd.append('%s' % dest)
                     
                 status = subprocess.call(cmd)
 
