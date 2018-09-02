@@ -5,7 +5,7 @@ import argparse
 import subprocess
 
 
-def no_filter(item):
+def no_filter(basedir, item, dry_run):
     return True
 
 
@@ -27,7 +27,7 @@ def visit(basedir, folder, remote=None, filter=no_filter, dry_run=False):
             if dry_run:
                 print("File: %s -> %s" % (src, dest))
             else:
-                cmd = ["echo", "archive", '--nogui', '%s' % str(src)]
+                cmd = ["echo", "archive", '%s' % str(src), '--nogui']
 
                 if remote is not None:
                     cmd.append('--remote')
