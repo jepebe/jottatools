@@ -2,6 +2,7 @@
 
 from pathlib2 import Path
 import argparse
+import subprocess
 
 
 def no_filter(item):
@@ -12,22 +13,28 @@ def relative(basedir, path):
     return path.relative_to(basedir)
 
 
-def visit(basedir, folder, remote=None, filter=no_filter, dry=False):
+def visit(basedir, folder, remote=None, filter=no_filter, dry_run=False):
     cur = basedir / folder
 
-    items = [item for item in cur.iterdir() if filter(basedir, item)]
+    items = [item for item in cur.iterdir() if filter(basedir, item, dry_run)]
     for item in items:
         if item.is_dir():
-            visit(basedir, item, remote, filter, dry)
+            visit(basedir, item, remote, filter, dry_run)
         else:
-            if dry:
+            if dry_run:
                 print("File: %s" % relative(basedir, item))
             else:
                 src = relative(basedir, item)
-                if remote is None:
-                    print('jotta-cli archive \'%s\'' % src)
-                else:
-                    print('jotta-cli archive \'%s\' --remote %s' % (src, remote))
+                cmd = ["echo", "archive", '\'%s\'' % str(src)]
+
+                if remote is not None:
+                    cmd.append('--remote %s' % remote)
+                    
+                status = subprocess.call(cmd)
+
+                if status != 0:
+                    print('Error! Archiving failed for: %s' % src)
+
 
 
 if __name__ == '__main__':
@@ -52,15 +59,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
     basedir = Path(args.folder).resolve()
 
-    def filter(basedir, item):
+    def filter(basedir, item, dry):
         excluded = args.exclude if args.exclude is not None else []
         if any([item.match(pattern) for pattern in excluded]):
-            print('Excl: %s' % relative(basedir, item))
+            if dry:
+                print('Excl: %s' % relative(basedir, item))
             return False
         if not args.include_hidden and item.name.startswith('.'):
-            print('Hide: %s' % relative(basedir, item))
+            if dry:
+                print('Hide: %s' % relative(basedir, item))
             return False
         return True
 
     remote = Path(args.remote) if args.remote is not None else None
-    visit(basedir, Path('.'), remote, filter, dry=args.dry)
+    visit(basedir, Path('.'), remote, filter, dry_run=args.dry)
