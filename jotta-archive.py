@@ -10,7 +10,7 @@ def no_filter(item):
 
 
 def relative(basedir, path):
-    return path.relative_to(basedir)
+    return path.relative_to(basedir.parent)
 
 
 def visit(basedir, folder, remote=None, filter=no_filter, dry_run=False):
@@ -25,10 +25,11 @@ def visit(basedir, folder, remote=None, filter=no_filter, dry_run=False):
                 print("File: %s" % relative(basedir, item))
             else:
                 src = relative(basedir, item)
-                cmd = ["echo", "archive", '\'%s\'' % str(src)]
+                cmd = ["echo", "archive", '%s' % str(src)]
 
                 if remote is not None:
-                    cmd.append('--remote %s' % remote)
+                    dest = remote / src.parent
+                    cmd.append('--remote %s' % dest)
                     
                 status = subprocess.call(cmd)
 
